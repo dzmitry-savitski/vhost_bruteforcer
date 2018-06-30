@@ -15,9 +15,12 @@ Virtual host bruteforcer.
  - ip range input in different formats (CIDR, range)
  
  ### To do:
- - scan against single host
+ - ~~scan against a single host~~
  - bruteforce a list of vhosts (from dict) against one server ip
  - ability to save all valid responses as html files to a given dir
  - scan against a list of ip's from file
  - pritify the readme file and add usage documentation
  - add zone to host from a dict (base word + different zones, like '.dev','.local')
+ - ability to configure port?
+ - ability to show curl PoC command
+ - add some examples to the console help output

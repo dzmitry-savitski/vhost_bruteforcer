@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# Author: Dzmitry Savitski
+# Get new version at: https://github.com/dzmitry-savitski/vhost_bruteforcer
 
 from __future__ import print_function
 import requests
@@ -11,39 +13,39 @@ import logging
 import signal
 
 # Default values
-host = ''
 ok_string = ''
-protocol = 'http'
+protocol = 'https'
 path = '/'
 req_timeout = 1.0
 
 
-def check_ip(ip):
+def check_ip(args):
+    (ip, host) = args
     try:
-        request_url = protocol + "://" + str(ip) + path
-        request_headers = {"Host": host}
+        request_url = protocol + '://' + str(ip) + path
+        request_headers = {'Host': host}
         response = requests.get(request_url, headers=request_headers, allow_redirects=False, verify=False,
                                 timeout=req_timeout)
         validate_response(ip, response)
     except requests.exceptions.RequestException:
-        logging.info(colored('[fail]', 'red') + str(ip))
+        logging.info(colored('[connection failed] ', 'red') + str(ip))
     except KeyboardInterrupt:
         pass
 
 
-def validate_response(ip, response):
+def validate_response(key, response):
     if ok_string:
         valid = ok_string in response.text
         if valid:
-            logging.warn(colored('[found]', 'green') + str(ip))
+            logging.warn(colored('[ok string found] ', 'green') + str(key))
         else:
-            logging.info(colored('[fail]', 'red') + str(ip))
+            logging.info(colored('[ok string failed] ', 'red') + str(key))
     else:
         response_length = len(response.text)
         if response_length > 0:
-            logging.warn(colored('[found: ' + str(response_length) + ']', 'green') + str(ip))
+            logging.warn(colored('[found response length ' + str(response_length) + '] ', 'green') + str(key))
         else:
-            logging.info(colored('[fail]', 'red') + str(ip))
+            logging.info(colored('[response length failed] ', 'red') + str(key))
 
 
 def parse_arguments():
@@ -53,8 +55,8 @@ def parse_arguments():
     parser.add_argument('--host', required=True, metavar='www.victim.com', dest='host',
                         help='Host to use. This argument will be sent in the host header with each request')
     parser.add_argument('-ip', '--ip-range', required=True, metavar='x.x.x.x/24', dest='ip_range',
-                        help='The network range to scan. Available formats: CIDR notation (x.x.x.x/xx), simple range '
-                             '(x.x.x.x - y.y.y.y).')
+                        help='The network range to scan. Available formats: single ip (x.x.x.x), CIDR notation ('
+                             'x.x.x.x/xx), simple range (x.x.x.x - y.y.y.y).')
     parser.add_argument('-ok', '--ok-string', required=False, metavar='\'Victim_title\'', dest='ok_string',
                         help='This string should present in a valid response. By default - all not empty responses '
                              'are shown.')
@@ -62,7 +64,7 @@ def parse_arguments():
                         help='Uri (path) to use in each request. By default - \'/\'')
     parser.add_argument('--timeout', required=False, metavar='0.5', default="1", dest='timeout',
                         help='Request timeout, by default - 1 sec.')
-    parser.add_argument('--protocol', required=False, metavar='http', default="http", choices=['http', 'https'],
+    parser.add_argument('--protocol', required=False, metavar='https', default="https", choices=['http', 'https'],
                         dest='protocol', help='Protocol to send requests by. By default http will be used.')
     parser.add_argument('-t', '--threads', required=False, metavar='5', default="1",
                         dest='threads', help='Number of threads. By default script works in single-thread mode.')
@@ -72,12 +74,14 @@ def parse_arguments():
 
 
 def get_ip_range(ip_range_arg):
-    if "/" in ip_range_arg:
+    if '/' in ip_range_arg:
         return list(netaddr.IPNetwork(ip_range_arg))
-    else:
+    elif '-' in ip_range_arg:
         ip_range_arg = ip_range_arg.replace(' ', '')
         ips = ip_range_arg.split('-')
-        return list(netaddr.IPRange(ips[0], ips[1]))
+        return netaddr.IPRange(ips[0], ips[1])
+    else:
+        return [netaddr.IPAddress(ip_range_arg)]
 
 
 def set_logging_level(verbose):
@@ -87,21 +91,30 @@ def set_logging_level(verbose):
         logging.basicConfig(level=logging.WARNING, format='%(message)s')
 
 
-def update_globals():
-    global host, ok_string, protocol, path, req_timeout
-    host = args.host
+def update_globals(args):
+    global ok_string, protocol, path, req_timeout
     ok_string = args.ok_string
     protocol = args.protocol
     path = args.uri
     req_timeout = float(args.timeout)
 
 
-if __name__ == "__main__":
+def pack_scan_arguments(args, ip_range):
+    scan_args = []
+    for ip in ip_range:
+        scan_args.append((ip, args.host))
+    return scan_args
+
+
+def configuration():
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
+def main():
     args = parse_arguments()
-    update_globals()
+    update_globals(args)
     set_logging_level(args.verbose)
+
     ip_range = get_ip_range(args.ip_range)
 
     # Start threads
@@ -110,11 +123,18 @@ if __name__ == "__main__":
     original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGINT, original_sigint_handler)
 
+    scan_args = pack_scan_arguments(args, ip_range)
+
     try:
-        records = thread_pool.map_async(check_ip, ip_range).get(9999999)
+        thread_pool.map_async(check_ip, scan_args).get(9999999)
     except KeyboardInterrupt:
-        print("Terminated by keyboard")
+        print('Terminated by keyboard')
         thread_pool.terminate()
     else:
         thread_pool.close()
     thread_pool.join()
+
+
+if __name__ == "__main__":
+    configuration()
+    main()

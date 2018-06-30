@@ -17,6 +17,52 @@ ok_string = ''
 protocol = 'https'
 path = '/'
 req_timeout = 1.0
+threads = 1
+
+
+def main():
+    args = parse_arguments()
+    update_globals(args)
+    set_logging_level(args.verbose)
+
+    ip_range = get_ip_range(args.ip_range)
+    scan_args = pack_scan_arguments(args, ip_range)
+
+    start_scan(scan_args)
+
+
+def update_globals(args):
+    global ok_string, protocol, path, req_timeout, threads
+    ok_string = args.ok_string
+    protocol = args.protocol
+    path = args.uri
+    req_timeout = float(args.timeout)
+    threads = int(args.threads)
+
+
+def configuration():
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def pack_scan_arguments(args, ip_range):
+    scan_args = []
+    for ip in ip_range:
+        scan_args.append((ip, args.host))
+    return scan_args
+
+
+def start_scan(scan_args):
+    thread_pool = Pool(threads)
+    original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGINT, original_sigint_handler)
+    try:
+        thread_pool.map_async(check_ip, scan_args).get(9999999)
+    except KeyboardInterrupt:
+        print('Terminated by keyboard')
+        thread_pool.terminate()
+    else:
+        thread_pool.close()
+    thread_pool.join()
 
 
 def check_ip(args):
@@ -26,26 +72,53 @@ def check_ip(args):
         request_headers = {'Host': host}
         response = requests.get(request_url, headers=request_headers, allow_redirects=False, verify=False,
                                 timeout=req_timeout)
-        validate_response(ip, response)
+        validate_response(response, host, str(ip))
     except requests.exceptions.RequestException:
-        logging.info(colored('[connection failed] ', 'red') + str(ip))
+        logging.info(colored('[connection failed] {}'.format(ip), 'red'))
     except KeyboardInterrupt:
         pass
 
 
-def validate_response(key, response):
+def validate_response(response, host, ip):
     if ok_string:
-        valid = ok_string in response.text
-        if valid:
-            logging.warn(colored('[ok string found] ', 'green') + str(key))
-        else:
-            logging.info(colored('[ok string failed] ', 'red') + str(key))
+        validate_ok_string(host, ip, response)
     else:
-        response_length = len(response.text)
-        if response_length > 0:
-            logging.warn(colored('[found response length ' + str(response_length) + '] ', 'green') + str(key))
-        else:
-            logging.info(colored('[response length failed] ', 'red') + str(key))
+        validate_not_empty_response(host, ip, response)
+
+
+def validate_ok_string(host, ip, response):
+    valid = ok_string in response.text
+    if valid:
+        logging.warn(colored('[ok string found] ip: {}, host: {}'.format(ip, host), 'green'))
+    else:
+        logging.info(colored('[ok string failed] ip: {}, host: {}'.format(ip, host), 'red'))
+
+
+def validate_not_empty_response(host, ip, response):
+    if response.text:
+        logging.warn(
+            colored('[found response length ' + str(len(response.text)) + '] ip: {}, host: {}'.format(ip, host),
+                    'green'))
+    else:
+        logging.info(colored('[response length failed] ip: {}, host: {}'.format(ip, host), 'red'))
+
+
+def get_ip_range(ip_range_arg):
+    if '/' in ip_range_arg:
+        return list(netaddr.IPNetwork(ip_range_arg))
+    elif '-' in ip_range_arg:
+        ip_range_arg = ip_range_arg.replace(' ', '')
+        ips = ip_range_arg.split('-')
+        return netaddr.IPRange(ips[0], ips[1])
+    else:
+        return [netaddr.IPAddress(ip_range_arg)]
+
+
+def set_logging_level(verbose):
+    if verbose:
+        logging.basicConfig(level=logging.INFO, format='%(message)s')
+    else:
+        logging.basicConfig(level=logging.WARNING, format='%(message)s')
 
 
 def parse_arguments():
@@ -71,68 +144,6 @@ def parse_arguments():
     parser.add_argument('-v', '--verbose', required=False, default=False, action='store_true', dest='verbose',
                         help='Show all failed attempts and debug information')
     return parser.parse_args()
-
-
-def get_ip_range(ip_range_arg):
-    if '/' in ip_range_arg:
-        return list(netaddr.IPNetwork(ip_range_arg))
-    elif '-' in ip_range_arg:
-        ip_range_arg = ip_range_arg.replace(' ', '')
-        ips = ip_range_arg.split('-')
-        return netaddr.IPRange(ips[0], ips[1])
-    else:
-        return [netaddr.IPAddress(ip_range_arg)]
-
-
-def set_logging_level(verbose):
-    if verbose:
-        logging.basicConfig(level=logging.INFO, format='%(message)s')
-    else:
-        logging.basicConfig(level=logging.WARNING, format='%(message)s')
-
-
-def update_globals(args):
-    global ok_string, protocol, path, req_timeout
-    ok_string = args.ok_string
-    protocol = args.protocol
-    path = args.uri
-    req_timeout = float(args.timeout)
-
-
-def pack_scan_arguments(args, ip_range):
-    scan_args = []
-    for ip in ip_range:
-        scan_args.append((ip, args.host))
-    return scan_args
-
-
-def configuration():
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-
-def main():
-    args = parse_arguments()
-    update_globals(args)
-    set_logging_level(args.verbose)
-
-    ip_range = get_ip_range(args.ip_range)
-
-    # Start threads
-    thread_pool = Pool(int(args.threads))
-
-    original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGINT, original_sigint_handler)
-
-    scan_args = pack_scan_arguments(args, ip_range)
-
-    try:
-        thread_pool.map_async(check_ip, scan_args).get(9999999)
-    except KeyboardInterrupt:
-        print('Terminated by keyboard')
-        thread_pool.terminate()
-    else:
-        thread_pool.close()
-    thread_pool.join()
 
 
 if __name__ == "__main__":

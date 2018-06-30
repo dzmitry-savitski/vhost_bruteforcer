@@ -43,7 +43,7 @@ def configuration():
 
 
 def pack_scan_arguments(args):
-    ip_range = get_ip_range(args.ip_range)
+    ip_range = get_ips(args)
     hosts = get_hosts(args)
     print_welcome_message(hosts, ip_range)
 
@@ -106,6 +106,18 @@ def validate_not_empty_response(host, ip, response):
         logging.info(colored('[response length failed] ip: {}, host: {}'.format(ip, host), 'red'))
 
 
+def get_ips(args):
+    if args.ip_list:
+        ip_records = args.ip_list.read().splitlines()
+        ip_records = filter(lambda item: item.strip(), ip_records)
+        all_ips = []
+        for record in ip_records:
+            all_ips += get_ip_range(record)
+        return all_ips
+    else:
+        return get_ip_range(args.ip_range)
+
+
 def get_ip_range(ip_range_arg):
     if '/' in ip_range_arg:
         return list(netaddr.IPNetwork(ip_range_arg))
@@ -140,13 +152,13 @@ def print_welcome_message(hosts, ip_range):
     hosts_count = len(hosts)
     total_requests = ip_count * hosts_count
     logging.warn(colored(
-        'Starting scan. Ip adresses: {}, hosts: {}, totlal requests to make: {}'.format(ip_count, hosts_count,
-                                                                                        total_requests),
+        'Starting scan. Ip addresses: {}, hosts: {}, totlal requests to make: {}'.format(ip_count, hosts_count,
+                                                                                         total_requests),
         'green'))
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='The script can help to find server real ip adress. It sends '
+    parser = argparse.ArgumentParser(description='The script can help to find server real ip address. It sends '
                                                  'requests with given host header to each ip from given ip range and '
                                                  'tries to find a valid response.')
 
@@ -156,9 +168,14 @@ def parse_arguments():
     group_host.add_argument('--hosts', metavar='/hosts.txt', dest='hosts', type=argparse.FileType('r'),
                             help='A file with hosts list, ane host per line.')
 
-    parser.add_argument('-ip', '--ip-range', required=True, metavar='x.x.x.x/24', dest='ip_range',
-                        help='The network range to scan. Available formats: single ip (x.x.x.x), CIDR notation ('
-                             'x.x.x.x/xx), simple range (x.x.x.x - y.y.y.y).')
+    group_ip = parser.add_mutually_exclusive_group(required=True)
+    group_ip.add_argument('-ip', '--ip-range', metavar='x.x.x.x/24', dest='ip_range',
+                          help='The network range to scan. Available formats: single ip (x.x.x.x), CIDR notation ('
+                               'x.x.x.x/xx), simple range (x.x.x.x - y.y.y.y).')
+    group_ip.add_argument('-ips', '--ip-list', metavar='/ip_list.txt', dest='ip_list', type=argparse.FileType('r'),
+                          help='A file with list of ip addresses to scan. One ip (or CIDR subnet, or network range) '
+                               'per line.')
+
     parser.add_argument('-ok', '--ok-string', required=False, metavar='\'Victim_title\'', dest='ok_string',
                         help='This string should present in a valid response. By default - all not empty responses '
                              'are shown.')

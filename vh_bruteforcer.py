@@ -20,6 +20,7 @@ req_timeout = 1.0
 threads = 1
 prescan_results = {}
 response_delta = 100
+show_curl = False
 
 
 def main():
@@ -32,13 +33,14 @@ def main():
 
 
 def update_globals(args):
-    global ok_string, protocol, path, req_timeout, threads, response_delta
+    global ok_string, protocol, path, req_timeout, threads, response_delta, show_curl
     ok_string = args.ok_string
     protocol = args.protocol
     path = args.uri
     req_timeout = float(args.timeout)
     threads = int(args.threads)
     response_delta = int(response_delta)
+    show_curl = args.show_curl
 
 
 def configuration():
@@ -137,6 +139,8 @@ def validate_ok_string(host, ip, response):
     valid = ok_string in response.text
     if valid:
         logging.warn(colored('[ok string found] ip: {}, host: {}'.format(ip, host), 'green'))
+        if show_curl:
+            log_curl_command(host, ip)
     else:
         logging.info(colored('[ok string failed] ip: {}, host: {}'.format(ip, host), 'red'))
 
@@ -146,6 +150,8 @@ def validate_response_length_delta(host, ip, response):
 
     if delta >= response_delta:
         logging.warn(colored('[response delta {} found] ip: {}, host: {}'.format(delta, ip, host), 'green'))
+        if show_curl:
+            log_curl_command(host, ip)
     else:
         logging.info(colored('[response delta failed] ip: {}, host: {}'.format(ip, host), 'red'))
 
@@ -155,8 +161,16 @@ def validate_not_empty_response(host, ip, response):
         logging.warn(
             colored('[response length {} found] ip: {}, host: {}'.format(len(response.text), ip, host),
                     'green'))
+        if show_curl:
+            log_curl_command(host, ip)
     else:
         logging.info(colored('[response length failed] ip: {}, host: {}'.format(ip, host), 'red'))
+
+
+def log_curl_command(host, ip):
+    global protocol, path
+    logging.warn(colored('Command to repeat the previous request: '
+                         'curl -k -H "Host: {}" "{}://{}{}"'.format(host, protocol, ip, path), 'green'))
 
 
 def get_ips(args):
@@ -258,6 +272,8 @@ def parse_arguments():
                         dest='threads', help='Number of threads. By default script works in single-thread mode.')
     parser.add_argument('-v', '--verbose', required=False, default=False, action='store_true', dest='verbose',
                         help='Show all failed attempts and debug information')
+    parser.add_argument('--show-curl', required=False, default=False, action='store_true', dest='show_curl',
+                        help='Show curl command to repeat valid responses')
     return parser.parse_args()
 
 

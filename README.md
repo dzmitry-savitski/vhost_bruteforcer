@@ -4,15 +4,15 @@ Virtual host bruteforcer.
 ### Status: in development
 
 ### What is done:
- - bruteforce single vhost against given network range
+ - bruteforce a single vhost against given network range
  - multithreading, ability to change the number of working threads
- - two modes: show all not empty responses or search for given string in the response
+ - two modes: show all not empty responses or search for a given string in the response
  - two verbosity levels
  - ability to set custom protocol
  - ability to set custom connection timeout
  - colored output
  - ability to set custom uri
- - ip range input in different formats (CIDR, range)
+ - ip range input in different formats (single IP, CIDR, range)
  
  ### To do:
  - ~~scan against a single host~~
@@ -23,7 +23,7 @@ Virtual host bruteforcer.
  - add usage documentation to readme
  - add zone to host from a dict (base word + different zones, like '.dev','.local')
  - ability to configure port?
- - ability to show curl PoC command
+ - ~~ability to show curl PoC command~~
  - add some examples to the console help output
  - ~~prescan live hosts before vhost bruteforce (the idea is to find web servers before bruteforcing vhosts)~~
  - mode for both http & https protocol?

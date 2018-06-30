@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Author: Dzmitry Savitski
-# Get new version at: https://github.com/dzmitry-savitski/vhost_bruteforcer
+# Get a new version at: https://github.com/dzmitry-savitski/vhost_bruteforcer
 
 from __future__ import print_function
 import requests
@@ -287,7 +287,7 @@ Increase default request timeout and show a curl command to repeat each found re
                              'against each ip address. Prescan is made with unexisting vhost and response length is '
                              'used to detect valid subdomains.')
 
-    parser.add_argument('--resp-delta', required=False, default=100, dest='response_delta', type=int,
+    parser.add_argument('--resp-delta', required=False, default=100, dest='response_delta', type=int, metavar='100',
                         help='Option is a delta in characters to find a valid vhost while scanning one valid server. '
                              'Default is 100 characters.')
     parser.add_argument('-ok', '--ok-string', required=False, metavar='\'Victim_title\'', dest='ok_string',

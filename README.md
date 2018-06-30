@@ -48,8 +48,7 @@ optional arguments:
                         case we have many vhosts to scan against each ip
                         address. Prescan is made with unexisting vhost and
                         response length is used to detect valid subdomains.
-  --resp-delta RESPONSE_DELTA
-                        Option is a delta in characters to find a valid vhost
+  --resp-delta 100      Option is a delta in characters to find a valid vhost
                         while scanning one valid server. Default is 100
                         characters.
   -ok 'Victim_title', --ok-string 'Victim_title'
@@ -89,6 +88,7 @@ optional arguments:
     `./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.0/24 --timeout 5 --show-curl`
 
  ### To do plans:
+ - fixing bugs
  - add mode to get subdomains and zones from a dict (base word + different zones, like '.dev','.local')
  - ability to configure port?
  - mode to scan both http & https protocol at once?

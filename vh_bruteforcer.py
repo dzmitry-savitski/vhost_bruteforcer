@@ -24,9 +24,7 @@ def main():
     args = parse_arguments()
     update_globals(args)
     set_logging_level(args.verbose)
-
-    ip_range = get_ip_range(args.ip_range)
-    scan_args = pack_scan_arguments(args, ip_range)
+    scan_args = pack_scan_arguments(args)
 
     start_scan(scan_args)
 
@@ -44,10 +42,15 @@ def configuration():
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def pack_scan_arguments(args, ip_range):
+def pack_scan_arguments(args):
+    ip_range = get_ip_range(args.ip_range)
+    hosts = get_hosts(args)
+    print_welcome_message(hosts, ip_range)
+
     scan_args = []
     for ip in ip_range:
-        scan_args.append((ip, args.host))
+        for host in hosts:
+            scan_args.append((ip, host))
     return scan_args
 
 
@@ -114,6 +117,14 @@ def get_ip_range(ip_range_arg):
         return [netaddr.IPAddress(ip_range_arg)]
 
 
+def get_hosts(args):
+    if args.host:
+        return [args.host]
+    else:
+        hosts_records = args.hosts.read().splitlines()
+        return filter(lambda item: item.strip(), hosts_records)
+
+
 def set_logging_level(verbose):
     if verbose:
         logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -121,12 +132,30 @@ def set_logging_level(verbose):
         logging.basicConfig(level=logging.WARNING, format='%(message)s')
 
 
+def print_welcome_message(hosts, ip_range):
+    logging.warn(colored('########################################################', 'green'))
+    logging.warn(colored('########### Vhost bruteforcer by D. Savitski ###########', 'green'))
+    logging.warn(colored('########################################################', 'green'))
+    ip_count = len(ip_range)
+    hosts_count = len(hosts)
+    total_requests = ip_count * hosts_count
+    logging.warn(colored(
+        'Starting scan. Ip adresses: {}, hosts: {}, totlal requests to make: {}'.format(ip_count, hosts_count,
+                                                                                        total_requests),
+        'green'))
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='The script can help to find server real ip adress. It sends '
                                                  'requests with given host header to each ip from given ip range and '
                                                  'tries to find a valid response.')
-    parser.add_argument('--host', required=True, metavar='www.victim.com', dest='host',
-                        help='Host to use. This argument will be sent in the host header with each request')
+
+    group_host = parser.add_mutually_exclusive_group(required=True)
+    group_host.add_argument('--host', metavar='www.victim.com', dest='host',
+                            help='Host to use. This argument will be sent in the host header with each request')
+    group_host.add_argument('--hosts', metavar='/hosts.txt', dest='hosts', type=argparse.FileType('r'),
+                            help='A file with hosts list, ane host per line.')
+
     parser.add_argument('-ip', '--ip-range', required=True, metavar='x.x.x.x/24', dest='ip_range',
                         help='The network range to scan. Available formats: single ip (x.x.x.x), CIDR notation ('
                              'x.x.x.x/xx), simple range (x.x.x.x - y.y.y.y).')

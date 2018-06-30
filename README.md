@@ -1,5 +1,5 @@
 # Virtual host bruteforcer
-Virtual host bruteforcer.
+Virtual host bruteforcer is a tool designed to help 
 
 ### Status: in development
 
@@ -17,18 +17,18 @@ Virtual host bruteforcer.
  ### To do:
  - ~~scan against a single host~~
  - ~~bruteforce a list of vhosts (from dict) against one (or multiple) server ip~~
- - ability to save all valid responses as html files to a given dir
+ - ~~ability to save all valid responses as html files to a given dir~~
  - ~~scan against a list of ip's from file~~
  - pritify the readme file, describe vhost bruteforce advantages
  - add usage documentation to readme
  - add zone to host from a dict (base word + different zones, like '.dev','.local')
  - ability to configure port?
  - ~~ability to show curl PoC command~~
- - add some examples to the console help output
+ - ~~add some examples to the console help output~~
  - ~~prescan live hosts before vhost bruteforce (the idea is to find web servers before bruteforcing vhosts)~~
  - mode for both http & https protocol?
  - ~~filter bad vhosts for given host when the same response returned for each our request(or use another more complex filtering method? length delta?)~~
- - refactor parameters (auto cast them)
+ - ~~refactor parameters (auto cast them)~~
  
  ### Why do we need vhost bruteforce? (draft):
  - dns records may not have records about some sweet subdomains

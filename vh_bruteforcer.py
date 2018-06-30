@@ -21,6 +21,7 @@ threads = 1
 prescan_results = {}
 response_delta = 100
 show_curl = False
+resp_dir = ''
 
 
 def main():
@@ -33,14 +34,15 @@ def main():
 
 
 def update_globals(args):
-    global ok_string, protocol, path, req_timeout, threads, response_delta, show_curl
+    global ok_string, protocol, path, req_timeout, threads, response_delta, show_curl, resp_dir
     ok_string = args.ok_string
     protocol = args.protocol
     path = args.uri
-    req_timeout = float(args.timeout)
-    threads = int(args.threads)
-    response_delta = int(response_delta)
+    req_timeout = args.timeout
+    threads = args.threads
+    response_delta = response_delta
     show_curl = args.show_curl
+    resp_dir = args.resp_dir
 
 
 def configuration():
@@ -139,8 +141,7 @@ def validate_ok_string(host, ip, response):
     valid = ok_string in response.text
     if valid:
         logging.warn(colored('[ok string found] ip: {}, host: {}'.format(ip, host), 'green'))
-        if show_curl:
-            log_curl_command(host, ip)
+        check_findings_options(host, ip, response)
     else:
         logging.info(colored('[ok string failed] ip: {}, host: {}'.format(ip, host), 'red'))
 
@@ -150,8 +151,7 @@ def validate_response_length_delta(host, ip, response):
 
     if delta >= response_delta:
         logging.warn(colored('[response delta {} found] ip: {}, host: {}'.format(delta, ip, host), 'green'))
-        if show_curl:
-            log_curl_command(host, ip)
+        check_findings_options(host, ip, response)
     else:
         logging.info(colored('[response delta failed] ip: {}, host: {}'.format(ip, host), 'red'))
 
@@ -161,10 +161,23 @@ def validate_not_empty_response(host, ip, response):
         logging.warn(
             colored('[response length {} found] ip: {}, host: {}'.format(len(response.text), ip, host),
                     'green'))
-        if show_curl:
-            log_curl_command(host, ip)
+        check_findings_options(host, ip, response)
     else:
         logging.info(colored('[response length failed] ip: {}, host: {}'.format(ip, host), 'red'))
+
+
+def check_findings_options(host, ip, response):
+    if show_curl:
+        log_curl_command(host, ip)
+    if resp_dir:
+        save_response_to_file(host, ip, response)
+
+
+def save_response_to_file(host, ip, response):
+    global resp_dir
+    text_file = open("{}{}_{}.html".format(resp_dir, ip, host), "w")
+    text_file.write(response.text.encode('utf-8'))
+    text_file.close()
 
 
 def log_curl_command(host, ip):
@@ -234,9 +247,27 @@ def print_start_scan_message(hosts, ip_range, args):
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='The script can help to find server real ip address. It sends '
-                                                 'requests with given host header to each ip from given ip range and '
-                                                 'tries to find a valid response.')
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description='The script is designed to bruteforce host header for a given '
+                                                 'network range or against a single host.',
+                                     epilog='''
+Usage examples:
+
+./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.0/24 -ok \'My_Site\'
+Bruteforce \'www.victim.com\' vhost in the given subnet returning \'My_Site\' in the response
+
+./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.11-10.10.10.55 -v -t 10
+Find all servers with not empty requests against given network range in verbose mode using 10 threads
+
+./vh_bruteforcer.py --hosts ./hosts_list.txt -ip 10.10.10.0/24 --prescan -v
+Bruteforce multiple vhosts against the subnet, use prescan mode to identify live hosts first and turn on response delta mode
+
+./vh_bruteforcer.py -h www.victim.com -ips ./ip_list.txt --protocol http --save-resp-dir /tmp/scan/
+Bruteforce one vhost in http mode, take ip ranges from file, save all valid responses to files in the given dir
+
+./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.0/24 --timeout 5 --show-curl
+Increase default request timeout and show a curl command to repeat each found response 
+                                            ''')
 
     group_host = parser.add_mutually_exclusive_group(required=True)
     group_host.add_argument('--host', metavar='www.victim.com', dest='host',
@@ -256,7 +287,7 @@ def parse_arguments():
                              'against each ip address. Prescan is made with unexisting vhost and response length is '
                              'used to detect valid subdomains.')
 
-    parser.add_argument('--resp-delta', required=False, default=100, dest='response_delta',
+    parser.add_argument('--resp-delta', required=False, default=100, dest='response_delta', type=int,
                         help='Option is a delta in characters to find a valid vhost while scanning one valid server. '
                              'Default is 100 characters.')
     parser.add_argument('-ok', '--ok-string', required=False, metavar='\'Victim_title\'', dest='ok_string',
@@ -264,16 +295,18 @@ def parse_arguments():
                              'are shown.')
     parser.add_argument('--uri', required=False, metavar='/', default="/", dest='uri',
                         help='Uri (path) to use in each request. By default - \'/\'')
-    parser.add_argument('--timeout', required=False, metavar='0.5', default="1", dest='timeout',
+    parser.add_argument('--timeout', required=False, metavar='0.5', default="1", dest='timeout', type=float,
                         help='Request timeout, by default - 1 sec.')
     parser.add_argument('--protocol', required=False, metavar='https', default="https", choices=['http', 'https'],
                         dest='protocol', help='Protocol to send requests by. By default http will be used.')
-    parser.add_argument('-t', '--threads', required=False, metavar='5', default="1",
+    parser.add_argument('-t', '--threads', required=False, metavar='5', default="1", type=int,
                         dest='threads', help='Number of threads. By default script works in single-thread mode.')
     parser.add_argument('-v', '--verbose', required=False, default=False, action='store_true', dest='verbose',
                         help='Show all failed attempts and debug information')
     parser.add_argument('--show-curl', required=False, default=False, action='store_true', dest='show_curl',
                         help='Show curl command to repeat valid responses')
+    parser.add_argument('--save-resp-dir', required=False, metavar='/tmp/', dest='resp_dir',
+                        help='Save all valid responses as html files to the given directory')
     return parser.parse_args()
 
 

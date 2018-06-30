@@ -25,8 +25,10 @@ Virtual host bruteforcer.
  - ability to configure port?
  - ability to show curl PoC command
  - add some examples to the console help output
- - prescan live hosts before vhost bruteforce (the idea is to find web servers before bruteforcing vhosts)
+ - ~~prescan live hosts before vhost bruteforce (the idea is to find web servers before bruteforcing vhosts)~~
  - mode for both http & https protocol?
+ - ~~filter bad vhosts for given host when the same response returned for each our request(or use another more complex filtering method? length delta?)~~
+ - refactor parameters (auto cast them)
  
  ### Why do we need vhost bruteforce? (draft):
  - dns records may not have records about some sweet subdomains

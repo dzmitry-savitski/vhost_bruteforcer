@@ -22,7 +22,8 @@ def check_ip(ip):
     try:
         request_url = protocol + "://" + str(ip) + path
         request_headers = {"Host": host}
-        response = requests.get(request_url, headers=request_headers, verify=False, timeout=req_timeout)
+        response = requests.get(request_url, headers=request_headers, allow_redirects=False, verify=False,
+                                timeout=req_timeout)
         validate_response(ip, response)
     except requests.exceptions.RequestException:
         logging.info(colored('[fail]', 'red') + str(ip))

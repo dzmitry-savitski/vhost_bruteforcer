@@ -298,7 +298,7 @@ Increase default request timeout and show a curl command to repeat each found re
     parser.add_argument('--timeout', required=False, metavar='0.5', default="1", dest='timeout', type=float,
                         help='Request timeout, by default - 1 sec.')
     parser.add_argument('--protocol', required=False, metavar='https', default="https", choices=['http', 'https'],
-                        dest='protocol', help='Protocol to send requests by. By default http will be used.')
+                        dest='protocol', help='Protocol to send requests by. By default https will be used.')
     parser.add_argument('-t', '--threads', required=False, metavar='5', default="1", type=int,
                         dest='threads', help='Number of threads. By default script works in single-thread mode.')
     parser.add_argument('-v', '--verbose', required=False, default=False, action='store_true', dest='verbose',

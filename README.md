@@ -56,7 +56,7 @@ optional arguments:
                         default - all not empty responses are shown.
   --uri /               Uri (path) to use in each request. By default - '/'
   --timeout 0.5         Request timeout, by default - 1 sec.
-  --protocol https      Protocol to send requests by. By default http will be
+  --protocol https      Protocol to send requests by. By default https will be
                         used.
   -t 5, --threads 5     Number of threads. By default script works in single-
                         thread mode.
@@ -91,4 +91,4 @@ optional arguments:
  - fixing bugs
  - add mode to get subdomains and zones from a dict (base word + different zones, like '.dev','.local')
  - ability to configure port?
- - mode to scan both http & https protocol at once?
+ - mode to scan both http & https protocols at once?

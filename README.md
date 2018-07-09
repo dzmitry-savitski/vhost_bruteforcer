@@ -20,8 +20,11 @@ Virtual host bruteforcer is a tool designed to brute force given host header (or
  - ability to set custom uri for request
  - option to save all valid responses as html files in given dir
  - can optionally show curl command to repeat each valid request
- 
- ## Usage:
+
+## Installation:
+`pip install requirements.txt`
+
+## Usage:
 ```
 vh_bruteforcer.py [-h] (--host www.victim.com | --hosts /hosts.txt)
                          (-ip x.x.x.x/24 | -ips /ip_list.txt) [--prescan]

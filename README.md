@@ -22,7 +22,7 @@ Virtual host bruteforcer is a tool designed to brute force given host header (or
  - can optionally show curl command to repeat each valid request
 
 ## Installation:
-`pip install requirements.txt`
+`pip install -r requirements.txt`
 
 ## Usage:
 ```

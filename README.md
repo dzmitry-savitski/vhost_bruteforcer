@@ -91,6 +91,7 @@ optional arguments:
     `./vh_bruteforcer.py --host www.victim.com -ip 10.10.10.0/24 --timeout 5 --show-curl`
 
  ### To do plans:
+ - include headers into ok_string scan (optionally)?
  - fixing bugs
  - add mode to get subdomains and zones from a dict (base word + different zones, like '.dev','.local')
  - ability to configure port?

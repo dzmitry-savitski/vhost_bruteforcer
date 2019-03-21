@@ -253,19 +253,19 @@ def parse_arguments():
                                      epilog='''
 Usage examples:
 
-./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.0/24 -ok \'My_Site\'
+./vh_bruteforcer.py --host www.victim.com -ip 10.10.10.0/24 -ok \'My_Site\'
 Bruteforce \'www.victim.com\' vhost in the given subnet returning \'My_Site\' in the response
 
-./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.11-10.10.10.55 -v -t 10
+./vh_bruteforcer.py --host www.victim.com -ip 10.10.10.11-10.10.10.55 -v -t 10
 Find all servers with not empty requests against given network range in verbose mode using 10 threads
 
 ./vh_bruteforcer.py --hosts ./hosts_list.txt -ip 10.10.10.0/24 --prescan -v
 Bruteforce multiple vhosts against the subnet, use prescan mode to identify live hosts first and turn on response delta mode
 
-./vh_bruteforcer.py -h www.victim.com -ips ./ip_list.txt --protocol http --save-resp-dir /tmp/scan/
+./vh_bruteforcer.py --host www.victim.com -ips ./ip_list.txt --protocol http --save-resp-dir /tmp/scan/
 Bruteforce one vhost in http mode, take ip ranges from file, save all valid responses to files in the given dir
 
-./vh_bruteforcer.py -h www.victim.com -ip 10.10.10.0/24 --timeout 5 --show-curl
+./vh_bruteforcer.py --host www.victim.com -ip 10.10.10.0/24 --timeout 5 --show-curl
 Increase default request timeout and show a curl command to repeat each found response 
                                             ''')
 
